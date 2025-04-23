@@ -10,8 +10,11 @@ import (
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	wineRepo := repository.NewWineRepository(db)
+	userRepo := repository.NewUserRepository(db)
 	wineService := service.NewWineService(wineRepo)
+	userService := service.NewUserService(userRepo)
 	wineHandler := delivery.NewWineHandler(wineService)
+	userHandler := delivery.NewUserHandler(userService)
 
 	wines := r.Group("/api/v1/wines")
 	{
@@ -20,5 +23,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		wines.POST("/", wineHandler.Create)
 		wines.PUT("/:id", wineHandler.Update)
 		wines.DELETE("/:id", wineHandler.Delete)
+	}
+
+	users := r.Group("users")
+	{
+		users.GET("/", userHandler.GetAll)
 	}
 }
