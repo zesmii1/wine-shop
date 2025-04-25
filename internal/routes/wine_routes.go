@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"wine-shop/internal/auth"
 	"wine-shop/internal/delivery"
+	"wine-shop/internal/middleware" // Добавляем импорт для middleware
 	"wine-shop/internal/repository"
 	"wine-shop/internal/service"
 )
@@ -43,5 +44,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	users := r.Group("/api/users")
 	{
 		users.GET("/", userHandler.GetAll)
+	}
+
+	// Защищённые маршруты
+	protected := r.Group("api/v1")
+	protected.Use(middleware.AuthRequired(db)) // передаём db
+	{
+		protected.GET("/me", auth.Me(db)) // и сюда
 	}
 }

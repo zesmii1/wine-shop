@@ -44,6 +44,8 @@ func Login(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"token": token})
 	}
 }
+
+// Функция для регистрации (Register)
 func Register(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
@@ -80,5 +82,27 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	}
+}
+
+// Функция для получения информации о текущем пользователе (Me)
+func Me(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, exists := c.Get("userID")
+		if !exists {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found in context"})
+			return
+		}
+
+		var u models.User
+		if err := db.First(&u, userID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"id":       u.ID,
+			"username": u.Username,
+		})
 	}
 }
