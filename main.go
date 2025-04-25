@@ -22,6 +22,6 @@ func main() {
 	}
 
 	r := gin.Default()
-	routes.SetupRoutes(r, db)
+	routes.SetupRoutes(r, db) // Передаем db в SetupRoutes
 	r.Run(":8080")
 }
