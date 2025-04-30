@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"database/sql"
@@ -18,9 +18,9 @@ var DB *gorm.DB
 func InitDB() {
 	host := "localhost"
 	port := 5433
-	user := "myuser"
-	password := "mypassword"
-	dbname := "mydatabase"
+	user := "postgres"
+	password := "postgres"
+	dbname := "postgres"
 
 	// Формируем строку подключения
 	dsn := fmt.Sprintf(

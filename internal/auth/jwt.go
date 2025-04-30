@@ -6,25 +6,27 @@ import (
 	"time"
 )
 
-var secret = []byte("your-secret-key") // Можно оставить как переменную глобального уровня
+var secret = []byte("your-secret-key") // оставим как есть
 
-// Генерация JWT токена
-func GenerateJWT(userID uint) (string, error) {
+// Генерация JWT токена с ролью
+func GenerateJWT(userID uint, role string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"role":    role,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secret) // Используем глобальную переменную secret
+	return token.SignedString(secret)
 }
 
-// Валидация JWT токена
+// Валидация токена и извлечение клеймов
 func ValidateJWT(tokenStr string) (*jwt.Token, jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return secret, nil // Используем переменную secret
+		return secret, nil
 	})
 
 	if err != nil || !token.Valid {

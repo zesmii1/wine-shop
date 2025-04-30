@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 	"wine-shop/internal/auth"
 	"wine-shop/internal/delivery"
-	"wine-shop/internal/middleware" // Добавляем импорт для middleware
+	"wine-shop/internal/middleware"
 	"wine-shop/internal/repository"
 	"wine-shop/internal/service"
 )
@@ -35,15 +35,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		wines.GET("/", wineHandler.GetAll)
 		wines.GET("/:id", wineHandler.GetById)
-		wines.POST("/", wineHandler.Create)
-		wines.PUT("/:id", wineHandler.Update)
-		wines.DELETE("/:id", wineHandler.Delete)
+
+		// Только для админа:
+		wines.POST("/", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Create)
+		wines.PUT("/:id", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Update)
+		wines.DELETE("/:id", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Delete)
 	}
 
-	// Роуты для пользователей
 	users := r.Group("/api/users")
 	{
 		users.GET("/", userHandler.GetAll)
+		users.DELETE("/:id", userHandler.Delete)
 	}
 
 	// Защищённые маршруты
@@ -52,4 +54,13 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		protected.GET("/me", auth.Me(db)) // и сюда
 	}
+
+	adminRoutes := r.Group("/api/admin")
+	adminRoutes.Use(middleware.AuthRequired(db), middleware.RequireRole("admin"))
+	{
+		adminRoutes.GET("/dashboard", func(c *gin.Context) {
+			c.JSON(200, gin.H{"message": "Welcome, Admin!"})
+		})
+	}
+
 }

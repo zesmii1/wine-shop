@@ -18,3 +18,7 @@ func (r *UserRepositoryImpl) GetAll() ([]models.User, error) {
 	err := r.db.Find(&users).Error
 	return users, err
 }
+
+func (r *UserRepositoryImpl) DeleteUserByID(id string) error {
+	return r.db.Delete(&models.User{}, id).Error
+}

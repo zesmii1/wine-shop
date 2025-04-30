@@ -1,18 +1,30 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: wine-postgres
+  postgres-app:
+    image: postgres:15
+    container_name: wine-db
     restart: always
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydatabase
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - "5433:5432"
     volumes:
-      - wine_pg_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+
+  wine-app:
+    build: .
+    container_name: wine-app
+    depends_on:
+      - postgres-app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=postgres://myuser:mypassword@localhost:5433/mydatabase?sslmode=disable
+
 
 volumes:
-  wine_pg_data:
+  postgres_data:

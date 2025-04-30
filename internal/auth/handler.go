@@ -4,12 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"log" // Добавляем логирование
+	"log"
 	"net/http"
 	"wine-shop/internal/models"
 )
 
-// Функция для входа (Login)
+// Login
 func Login(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
@@ -22,20 +22,17 @@ func Login(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		var u models.User
-		// Получаем пользователя из базы данных
 		if err := db.Where("username = ?", req.Username).First(&u).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			return
 		}
 
-		// Сравниваем пароли
 		if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or password incorrect"})
 			return
 		}
 
-		// Генерируем JWT
-		token, err := GenerateJWT(u.ID)
+		token, err := GenerateJWT(u.ID, u.Role) // ← добавлена роль
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
 			return
@@ -45,7 +42,7 @@ func Login(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// Функция для регистрации (Register)
+// Register
 func Register(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
@@ -73,10 +70,11 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 		u := models.User{
 			Username: req.Username,
 			Password: string(hashedPassword),
+			Role:     "user", // ← все новые пользователи с ролью user
 		}
 
 		if err := db.Create(&u).Error; err != nil {
-			log.Println("Error creating user:", err) // Логируем ошибку
+			log.Println("Error creating user:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 			return
 		}
@@ -85,7 +83,7 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// Функция для получения информации о текущем пользователе (Me)
+// Me
 func Me(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("userID")
@@ -103,6 +101,7 @@ func Me(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{
 			"id":       u.ID,
 			"username": u.Username,
+			"role":     u.Role, // ← показываем роль
 		})
 	}
 }
