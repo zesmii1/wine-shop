@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register - Wine Shop</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f0eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .register-box {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #5e3c2f;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #5e3c2f;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #472b22;
+    }
+    .link {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .link a {
+      color: #5e3c2f;
+      text-decoration: none;
+    }
+    .link a:hover {
+      text-decoration: underline;
+    }
+    p#error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="register-box">
+  <h2>Register</h2>
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="register()">Create Account</button>
+  <p id="error"></p>
+  <div class="link">
+    <a href="login.html">Already have an account? Login</a>
+  </div>
+</div>
+
+<script>
+  function register() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+            .then(async (res) => {
+              if (!res.ok) {
+                const err = await res.json();
+                document.getElementById("error").innerText = err.error || "Ошибка регистрации";
+                return;
+              }
+              // Если регистрация успешна — логинимся сразу
+              return fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password }),
+              });
+            })
+            .then(async (res) => {
+              if (!res || !res.ok) {
+                document.getElementById("error").innerText = "Ошибка входа после регистрации";
+                return;
+              }
+              const data = await res.json();
+              if (!data.token) {
+                document.getElementById("error").innerText = "Ошибка получения токена";
+                return;
+              }
+              localStorage.setItem("token", data.token);
+              window.location.href = "/frontend/wines.html";
+            })
+            .catch(() => {
+              document.getElementById("error").innerText = "Ошибка соединения с сервером";
+            });
+  }
+</script>
+</body>
+</html>

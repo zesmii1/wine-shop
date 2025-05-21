@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wine List</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f6f2;
+      padding: 40px;
+      color: #333;
+    }
+    h1 {
+      color: #5e3c2f;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background-color: #fff;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    button {
+      background-color: #5e3c2f;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    button:hover {
+      background-color: #472b22;
+    }
+    #admin-controls {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<h1>Welcome to the Wine List 🍷</h1>
+<div id="admin-controls" style="display:none;">
+  <button onclick="window.location.href='/frontend/add-wine.html'">Добавить вино</button>
+</div>
+<button onclick="loadWines()">Load Wines</button>
+<button onclick="logout()">Logout</button>
+<ul id="wine-list"></ul>
+
+<script>
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "/frontend/login.html";
+  }
+
+  let userRole = "";
+
+  fetch("/api/v1/me", {
+    headers: { "Authorization": "Bearer " + token }
+  })
+          .then(res => {
+            if (!res.ok) throw new Error("Ошибка авторизации");
+            return res.json();
+          })
+          .then(user => {
+            userRole = user.role || "";
+            if (userRole === "admin") {
+              document.getElementById("admin-controls").style.display = "block";
+            }
+          })
+          .catch(() => {
+            alert("Ошибка авторизации. Пожалуйста, войдите снова.");
+            logout();
+          });
+
+  function loadWines() {
+    fetch("/api/v1/wines", {
+      headers: { "Authorization": "Bearer " + token }
+    })
+            .then(res => {
+              if (!res.ok) throw new Error("Ошибка авторизации");
+              return res.json();
+            })
+            .then(data => {
+              const list = document.getElementById("wine-list");
+              list.innerHTML = "";
+              data.forEach(wine => {
+                const li = document.createElement("li");
+                li.textContent = `${wine.name} (${wine.year}) - $${wine.price}`;
+
+                if (userRole === "admin") {
+                  const btnEdit = document.createElement("button");
+                  btnEdit.textContent = "Редактировать";
+                  btnEdit.onclick = () => {
+                    window.location.href = `/frontend/edit-wine.html?id=${wine.id}`;
+                  };
+
+                  const btnDelete = document.createElement("button");
+                  btnDelete.textContent = "Удалить";
+                  btnDelete.onclick = () => {
+                    if (confirm("Удалить это вино?")) {
+                      fetch(`/api/v1/wines/${wine.id}`, {
+                        method: "DELETE",
+                        headers: { "Authorization": "Bearer " + token }
+                      })
+                              .then(res => {
+                                if (!res.ok) throw new Error("Ошибка удаления");
+                                loadWines(); // обновляем список
+                              })
+                              .catch(() => alert("Ошибка при удалении"));
+                    }
+                  };
+
+                  const btnContainer = document.createElement("div");
+                  btnContainer.appendChild(btnEdit);
+                  btnContainer.appendChild(btnDelete);
+
+                  li.appendChild(btnContainer);
+                }
+
+                list.appendChild(li);
+              });
+            })
+            .catch(() => {
+              alert("Ошибка загрузки. Проверьте авторизацию.");
+              logout();
+            });
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/frontend/login.html";
+  }
+</script>
+</body>
+</html>

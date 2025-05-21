@@ -11,32 +11,26 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
-	// Репозитории
 	wineRepo := repository.NewWineRepository(db)
 	userRepo := repository.NewUserRepository(db)
 
-	// Сервисы
 	wineService := service.NewWineService(wineRepo)
 	userService := service.NewUserService(userRepo)
 
-	// Хендлеры
 	wineHandler := delivery.NewWineHandler(wineService)
 	userHandler := delivery.NewUserHandler(userService)
 
-	// Роуты аутентификации
 	authGroup := r.Group("/api/auth")
 	{
 		authGroup.POST("/register", auth.Register(db))
 		authGroup.POST("/login", auth.Login(db))
 	}
 
-	// Роуты для вина
 	wines := r.Group("/api/v1/wines")
 	{
 		wines.GET("/", wineHandler.GetAll)
 		wines.GET("/:id", wineHandler.GetById)
 
-		// Только для админа:
 		wines.POST("/", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Create)
 		wines.PUT("/:id", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Update)
 		wines.DELETE("/:id", middleware.AuthRequired(db), middleware.RequireRole("admin"), wineHandler.Delete)
@@ -48,11 +42,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		users.DELETE("/:id", userHandler.Delete)
 	}
 
-	// Защищённые маршруты
 	protected := r.Group("api/v1")
-	protected.Use(middleware.AuthRequired(db)) // передаём db
+	protected.Use(middleware.AuthRequired(db))
 	{
-		protected.GET("/me", auth.Me(db)) // и сюда
+		protected.GET("/me", auth.Me(db))
 	}
 
 	adminRoutes := r.Group("/api/admin")

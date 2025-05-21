@@ -11,5 +11,7 @@ func main() {
 
 	r := gin.Default()
 	routes.SetupRoutes(r, db.DB)
+	r.Static("/frontend", "./frontend")
 	r.Run(":8081")
+
 }

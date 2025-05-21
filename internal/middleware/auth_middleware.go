@@ -26,7 +26,7 @@ func AuthRequired(db interface{}) gin.HandlerFunc {
 		role, _ := claims["role"].(string)
 
 		c.Set("userID", uint(userIDFloat))
-		c.Set("role", role) // ← сохраняем роль в контекст
+		c.Set("role", role)
 
 		c.Next()
 	}

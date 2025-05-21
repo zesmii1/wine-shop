@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Редактировать Вино</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f0eb;
+            padding: 40px;
+            color: #333;
+        }
+        h1 {
+            color: #5e3c2f;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px 20px;
+            align-items: center;
+        }
+        label {
+            font-weight: 600;
+            color: #5e3c2f;
+            justify-self: end;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            grid-column: 1 / -1;
+            background-color: #5e3c2f;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 17px;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #472b22;
+        }
+        p#error {
+            grid-column: 1 / -1;
+            color: red;
+            text-align: center;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<h1>Редактировать вино</h1>
+<form id="wineForm">
+    <label for="name">Название</label>
+    <input type="text" id="name" name="name" required />
+    <label for="year">Год</label>
+    <input type="number" id="year" name="year" required min="1900" max="2100" />
+    <label for="price">Цена ($)</label>
+    <input type="number" id="price" name="price" required step="0.01" />
+    <label for="description">Описание</label>
+    <textarea id="description" name="description" rows="4" required></textarea>
+    <p id="error"></p>
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<script>
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "/frontend/login.html";
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const wineId = urlParams.get("id");
+    const form = document.getElementById("wineForm");
+    const errorP = document.getElementById("error");
+
+    if (!wineId) {
+        alert("ID вина не указан");
+        window.location.href = "/frontend/wines.html";
+    }
+
+    // Загружаем данные вина
+    fetch(`/api/v1/wines/${wineId}`, {
+        headers: { "Authorization": "Bearer " + token }
+    })
+        .then(res => {
+            if (!res.ok) throw new Error("Ошибка загрузки данных");
+            return res.json();
+        })
+        .then(wine => {
+            form.name.value = wine.name;
+            form.year.value = wine.year;
+            form.price.value = wine.price;
+            form.description.value = wine.description;
+        })
+        .catch(() => {
+            alert("Ошибка загрузки вина. Возможно, вы не авторизованы.");
+            window.location.href = "/frontend/login.html";
+        });
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorP.textContent = "";
+
+        const wineData = {
+            name: form.name.value,
+            year: parseInt(form.year.value),
+            price: parseFloat(form.price.value),
+            description: form.description.value,
+        };
+
+        try {
+            const res = await fetch(`/api/v1/wines/${wineId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token,
+                },
+                body: JSON.stringify(wineData),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                errorP.textContent = err.error || "Ошибка обновления";
+                return;
+            }
+            window.location.href = "/frontend/wines.html";
+        } catch (err) {
+            errorP.textContent = "Ошибка соединения с сервером";
+        }
+    });
+</script>
+</body>
+</html>

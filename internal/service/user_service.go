@@ -4,7 +4,7 @@ import "wine-shop/internal/models"
 
 type UserRepository interface {
 	GetAll() ([]models.User, error)
-	DeleteUserByID(id string) error // <-- добавляем в интерфейс
+	DeleteUserByID(id string) error
 }
 
 type UserService struct {

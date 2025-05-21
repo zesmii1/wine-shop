@@ -12,3 +12,4 @@ CREATE TABLE wines (
                        price NUMERIC(10, 2) NOT NULL,
                        description TEXT
 );
+

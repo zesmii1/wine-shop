@@ -21,10 +21,9 @@ services:
       - postgres-app
     restart: always
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      - DB_URL=postgres://myuser:mypassword@localhost:5433/mydatabase?sslmode=disable
-
+      - DB_URL=postgres://postgres:postgres@postgres-app:5432/postgres?sslmode=disable
 
 volumes:
   postgres_data:
